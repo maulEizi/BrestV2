@@ -1,25 +1,39 @@
-const { SlashCommandBuilder } = require('discord.js');
-
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('ban')
-    .setDescription('Bannir un membre du serveur')
-    .addUserOption(option => option.setName('user').setDescription('Membre à bannir').setRequired(true))
-    .addStringOption(option => option.setName('reason').setDescription('Raison du bannissement').setRequired(false)),
-  
-  async execute(interaction) {
-    const member = interaction.options.getMember('user');
-    const reason = interaction.options.getString('reason') || 'Aucune raison spécifiée';
+  data: {
+    name: 'ban',
+    description: 'Bannir un utilisateur du serveur.',
+    options: [
+      {
+        name: 'user',
+        type: 'USER',
+        description: 'L\'utilisateur à bannir',
+        required: true,
+      },
+    ],
+  },
+  execute: async (interaction) => {
+    const user = interaction.options.getUser('user');
+    if (!user) {
+      return interaction.reply({ content: 'Veuillez mentionner un utilisateur à bannir.', ephemeral: true });
+    }
 
+    // Vérification des permissions de l'utilisateur
     if (!interaction.member.permissions.has('BAN_MEMBERS')) {
-      return interaction.reply('Tu n\'as pas la permission de bannir des membres.');
+      return interaction.reply({ content: 'Vous n\'avez pas la permission de bannir des membres.', ephemeral: true });
     }
 
-    if (!member.bannable) {
-      return interaction.reply('Je ne peux pas bannir ce membre.');
+    // Vérification des permissions du bot
+    if (!interaction.guild.me.permissions.has('BAN_MEMBERS')) {
+      return interaction.reply({ content: 'Je n\'ai pas la permission de bannir des membres.', ephemeral: true });
     }
 
-    await member.ban({ reason: reason });
-    return interaction.reply(`${member.user.tag} a été banni pour : ${reason}`);
-  }
+    try {
+      // Bannir l'utilisateur
+      await interaction.guild.members.ban(user);
+      await interaction.reply({ content: `${user.tag} a été banni avec succès !`, ephemeral: true });
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({ content: 'Une erreur est survenue lors du bannissement de l\'utilisateur.', ephemeral: true });
+    }
+  },
 };
