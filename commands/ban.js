@@ -1,23 +1,30 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
 module.exports = {
-  data: {
-    name: 'ban',
-    description: 'Bannir un utilisateur du serveur.',
-    options: [
-      {
-        name: 'user',
-        type: 6,  // Le type 'USER' est défini par 6
-        description: "L'utilisateur à bannir",
-        required: true,
-      },
-    ],
-  },
-  execute: async (interaction) => {
+  data: new SlashCommandBuilder()
+    .setName('ban')
+    .setDescription('Bannir un utilisateur du serveur.')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription("L'utilisateur à bannir")
+        .setRequired(true)),
+
+  async execute(interaction) {
+    // Récupérer l'utilisateur à bannir
     const user = interaction.options.getUser('user');
+    
+    console.log('Utilisateur à bannir:', user); // Vérifie quel utilisateur est récupéré
+
     if (!user) {
-      return interaction.reply({ content: 'Veuillez mentionner un utilisateur à bannir.', ephemeral: true });
+      return interaction.reply({ content: 'Utilisateur introuvable', ephemeral: true });
     }
 
-    // Vérification des permissions de l'utilisateur
+    // Vérification si l'utilisateur à bannir est un bot
+    if (user.bot) {
+      return interaction.reply({ content: "Tu ne peux pas bannir un bot.", ephemeral: true });
+    }
+
+    // Vérification des permissions de l'utilisateur qui exécute la commande
     if (!interaction.member.permissions.has('BAN_MEMBERS')) {
       return interaction.reply({ content: 'Vous n\'avez pas la permission de bannir des membres.', ephemeral: true });
     }
@@ -27,13 +34,19 @@ module.exports = {
       return interaction.reply({ content: 'Je n\'ai pas la permission de bannir des membres.', ephemeral: true });
     }
 
+    // Vérification de la hiérarchie des rôles (le bot ne peut pas bannir un utilisateur plus haut que lui)
+    const member = await interaction.guild.members.fetch(user.id);
+    if (member && member.roles.highest.position >= interaction.guild.members.me.roles.highest.position) {
+      return interaction.reply({ content: "Je ne peux pas bannir cet utilisateur car il a un rôle plus élevé que moi.", ephemeral: true });
+    }
+
     try {
       // Bannir l'utilisateur
       await interaction.guild.members.ban(user);
       await interaction.reply({ content: `${user.tag} a été banni avec succès !`, ephemeral: true });
     } catch (error) {
-      console.error(error);
-      await interaction.reply({ content: 'Une erreur est survenue lors du bannissement de l\'utilisateur.', ephemeral: true });
+      console.error('Erreur lors du bannissement:', error);
+      await interaction.reply({ content: 'Une erreur est survenue lors du bannissement.', ephemeral: true });
     }
   },
 };
