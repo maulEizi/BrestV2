@@ -1,52 +1,55 @@
+const { Client, GatewayIntentBits } = require('discord.js');
 const fs = require('fs');
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v10');
-require('dotenv').config();
+const path = require('path');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// Utilisation de la variable d'environnement pour récupérer le token
+const token = process.env.DISCORD_TOKEN;
 
-client.commands = new Collection();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+});
+
+// Charger toutes les commandes
+client.commands = new Map();
+
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.data.name, command);
+  const command = require(path.join(commandsPath, file));
+  client.commands.set(command.data.name, command);
 }
 
-// Enregistrement des slash commands
-const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
-(async () => {
-    try {
-        const commands = client.commands.map(command => command.data.toJSON());
-        await rest.put(
-            Routes.applicationCommands(process.env.CLIENT_ID),
-            { body: commands },
-        );
-        console.log('Slash commands enregistrées avec succès.');
-    } catch (error) {
-        console.error(error);
-    }
-})();
-
+// Quand le bot est prêt
 client.once('ready', () => {
-    console.log(`Connecté en tant que ${client.user.tag}!`);
+  console.log('Bot est prêt et connecté!');
 });
 
+// Enregistrer les commandes auprès de Discord
+client.on('ready', async () => {
+  const commands = client.application.commands;
+
+  // Crée toutes les commandes en une fois
+  await commands.set(client.commands.map(cmd => cmd.data.toJSON()));
+});
+
+// Gestion des interactions
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+  if (!interaction.isCommand()) return;
 
-    const command = client.commands.get(interaction.commandName);
+  const command = client.commands.get(interaction.commandName);
 
-    if (!command) return;
+  if (!command) {
+    return interaction.reply('Commande non trouvée.');
+  }
 
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        await interaction.reply({ content: 'Une erreur est survenue lors de l\'exécution de cette commande.', ephemeral: true });
-    }
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply('Il y a eu une erreur lors de l\'exécution de cette commande.');
+  }
 });
 
-client.login(process.env.TOKEN);
+// Connexion du bot avec le token de la variable d'environnement
+client.login(token);
