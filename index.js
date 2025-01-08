@@ -1,4 +1,9 @@
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
+
+// Définir un port fictif pour éviter l'erreur de Render
+process.env.PORT = process.env.PORT || 8080;  // Utilisation d'un port fictif (8080) si aucune variable PORT n'est définie
+
+// Création du client Discord
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
@@ -6,17 +11,19 @@ const client = new Client({
 // Initialiser la collection de commandes
 client.commands = new Collection();
 
-// Exemple de commande, à ajouter dans ton code
+// Exemple de commande : ping
 client.commands.set('ping', {
   execute: async (interaction) => {
     await interaction.reply('Pong!');
   },
 });
 
+// Quand le bot est prêt
 client.once('ready', () => {
   console.log('Bot est prêt et connecté!');
 });
 
+// Gérer les interactions
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -31,5 +38,5 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-// Connecte le bot avec le token
+// Connexion du bot avec le token Discord depuis les variables d'environnement
 client.login(process.env.DISCORD_TOKEN);
