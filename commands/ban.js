@@ -5,8 +5,8 @@ module.exports = {
     options: [
       {
         name: 'user',
-        type: 'USER',
-        description: 'L\'utilisateur à bannir',
+        type: 6,  // Le type 'USER' est défini par 6
+        description: "L'utilisateur à bannir",
         required: true,
       },
     ],
