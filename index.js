@@ -1,7 +1,8 @@
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const http = require('http'); // Importer le module HTTP pour faire un serveur fictif
 
-// Définir un port fictif pour éviter l'erreur de Render
-process.env.PORT = process.env.PORT || 8080;  // Utilisation d'un port fictif (8080) si aucune variable PORT n'est définie
+// Définir un port fictif pour Render
+process.env.PORT = process.env.PORT || 8080;  // Utilisation d'un port fictif (8080)
 
 // Création du client Discord
 const client = new Client({
@@ -40,3 +41,11 @@ client.on('interactionCreate', async (interaction) => {
 
 // Connexion du bot avec le token Discord depuis les variables d'environnement
 client.login(process.env.DISCORD_TOKEN);
+
+// Créer un serveur HTTP fictif pour écouter sur un port (utile pour Render)
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot Discord en ligne');
+}).listen(process.env.PORT, () => {
+  console.log(`Serveur fictif en écoute sur le port ${process.env.PORT}`);
+});
