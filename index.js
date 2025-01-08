@@ -28,7 +28,7 @@ client.once('ready', async () => {
   console.log('Bot est prêt et connecté!');
 
   // ID du serveur (ou guild) où enregistrer les commandes
-  const guildId = 'TON_ID_DE_SERVEUR'; // Remplace par l'ID de ton serveur
+  const guildId = '1325184274923786300'; // Remplace par l'ID de ton serveur
   const guild = await client.guilds.fetch(guildId);
 
   // Enregistrer toutes les commandes slash
