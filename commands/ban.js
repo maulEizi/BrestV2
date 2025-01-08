@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { Permissions } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,8 +14,6 @@ module.exports = {
     // Récupérer l'utilisateur à bannir
     const user = interaction.options.getUser('user');
     
-    console.log('Utilisateur à bannir:', user); // Vérifie quel utilisateur est récupéré
-
     if (!user) {
       return interaction.reply({ content: 'Utilisateur introuvable', ephemeral: true });
     }
@@ -25,12 +24,12 @@ module.exports = {
     }
 
     // Vérification des permissions de l'utilisateur qui exécute la commande
-    if (!interaction.member.permissions.has('BAN_MEMBERS')) {
+    if (!interaction.member.permissions.has(Permissions.FLAGS.BAN_MEMBERS)) {
       return interaction.reply({ content: 'Vous n\'avez pas la permission de bannir des membres.', ephemeral: true });
     }
 
     // Vérification des permissions du bot
-    if (!interaction.guild.me.permissions.has('BAN_MEMBERS')) {
+    if (!interaction.guild.me.permissions.has(Permissions.FLAGS.BAN_MEMBERS)) {
       return interaction.reply({ content: 'Je n\'ai pas la permission de bannir des membres.', ephemeral: true });
     }
 
