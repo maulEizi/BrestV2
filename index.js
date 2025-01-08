@@ -1,10 +1,12 @@
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
-const http = require('http'); // Importer le module HTTP pour faire un serveur fictif
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 // Définir un port fictif pour Render
-process.env.PORT = process.env.PORT || 8080;  // Utilisation d'un port fictif (8080)
+process.env.PORT = process.env.PORT || 8080;
 
-// Création du client Discord
+// Créer le client Discord
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
@@ -12,16 +14,29 @@ const client = new Client({
 // Initialiser la collection de commandes
 client.commands = new Collection();
 
-// Exemple de commande : ping
-client.commands.set('ping', {
-  execute: async (interaction) => {
-    await interaction.reply('Pong!');
-  },
-});
+// Charger toutes les commandes depuis le dossier 'commands'
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-// Quand le bot est prêt
-client.once('ready', () => {
+for (const file of commandFiles) {
+  const command = require(path.join(commandsPath, file));
+  client.commands.set(command.data.name, command);
+}
+
+// Quand le bot est prêt, enregistrer les commandes Slash auprès de Discord
+client.once('ready', async () => {
   console.log('Bot est prêt et connecté!');
+
+  // ID du serveur (ou guild) où enregistrer les commandes
+  const guildId = 'TON_ID_DE_SERVEUR'; // Remplace par l'ID de ton serveur
+  const guild = await client.guilds.fetch(guildId);
+
+  // Enregistrer toutes les commandes slash
+  await guild.commands.set(client.commands.map(command => command.data));
+  console.log('Commandes Slash enregistrées sur le serveur.');
+
+  // Optionnel : pour enregistrer les commandes globales (mais cela peut prendre plus de temps)
+  // await client.application.commands.set(client.commands.map(command => command.data));
 });
 
 // Gérer les interactions
